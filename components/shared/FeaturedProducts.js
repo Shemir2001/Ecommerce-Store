@@ -1037,9 +1037,60 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useProductStore, useCartStore } from '@/lib/store';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingCart, FiPackage } from 'react-icons/fi';
 import { message } from 'antd';
 import Image from 'next/image';
+
+// Skeleton Loading Component
+const ProductSkeleton = () => (
+  <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden animate-pulse">
+    <div className="h-56 bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_200%] animate-shimmer"></div>
+    <div className="p-5 space-y-3">
+      <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded-lg w-3/4"></div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded w-5/6"></div>
+      </div>
+      <div className="flex items-center justify-between pt-3">
+        <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded-lg w-24"></div>
+        <div className="h-10 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded-full w-32"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Empty State Component
+const EmptyState = () => (
+  <div className="col-span-full flex flex-col items-center justify-center py-20 px-4">
+    <div className="relative mb-8">
+      {/* Animated circles */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-32 h-32 bg-green-100 rounded-full animate-ping opacity-20"></div>
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-24 h-24 bg-green-200 rounded-full animate-pulse"></div>
+      </div>
+      
+      {/* Icon */}
+      <div className="relative w-32 h-32 bg-gradient-to-br from-green-50 to-green-100 rounded-full flex items-center justify-center shadow-lg">
+        <FiPackage className="w-16 h-16 text-green-500" />
+      </div>
+    </div>
+
+    <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3 text-center">
+      No Products Found
+    </h3>
+    <p className="text-gray-500 text-center mb-8 max-w-md">
+      We couldn't find any products in this category. Try selecting a different category or check back later for new arrivals.
+    </p>
+    
+    <Link href="/products">
+      <button className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+        Browse All Products
+      </button>
+    </Link>
+  </div>
+);
 
 export default function FeaturedProducts() {
   const { data: session } = useSession();
@@ -1061,7 +1112,6 @@ export default function FeaturedProducts() {
         const res = await fetch('/api/categories');
         if (!res.ok) throw new Error('Failed to fetch categories');
         const data = await res.json();
-        // prepend "All Products" for default tab
         setCategories(['All Products', ...data.map(c => c.name)]);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -1120,12 +1170,23 @@ export default function FeaturedProducts() {
           (p) => p.category?.toLowerCase() === activeCategory.toLowerCase()
         );
 
-  // Loading state
-  if (isLoading) return <p>Loading featured products...</p>;
-  if (!featuredProducts || featuredProducts.length === 0) return <p>No products available.</p>;
-
   return (
     <section ref={sectionRef} className="relative py-16 md:py-24 bg-gray-50">
+      {/* Add shimmer animation styles */}
+      <style jsx global>{`
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
+
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -1151,78 +1212,96 @@ export default function FeaturedProducts() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, index) => (
+              <ProductSkeleton key={index} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredProducts.length === 0 && (
+          <div className="grid grid-cols-1">
+            <EmptyState />
+          </div>
+        )}
+
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredProducts.slice(0, 8).map((product) => {
-            const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
+        {!isLoading && filteredProducts.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.slice(0, 8).map((product) => {
+              const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
 
-            return (
-              <div
-                key={product._id || product.id}
-                className="bg-white border-2 border-green-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col"
-              >
-                {/* Image Container */}
-                <div className="relative h-56 overflow-hidden bg-gray-50 group">
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className="bg-green-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
-                      {product.category || 'Uncategorized'}
-                    </span>
-                  </div>
-
-                  <Link href={`/products/${product.slug || product._id}`}>
-                    <Image
-                      src={product.images?.[0] || '/images/placeholder.jpg'}
-                      alt={product.name || 'Product'}
-                      fill
-                      className="object-cover cursor-pointer hover:scale-110 transition-transform duration-500"
-                      onError={(e) => {
-                        e.target.src = '/images/placeholder.jpg';
-                      }}
-                    />
-                  </Link>
-                </div>
-
-                {/* Content */}
-                <div className="p-5 flex-1 flex flex-col">
-                  <Link href={`/products/${product.slug || product._id}`}>
-                    <h3 className="text-xl font-bold text-gray-800 mb-2 hover:text-green-600 transition-colors cursor-pointer line-clamp-1">
-                      {product.name || 'Unnamed Product'}
-                    </h3>
-                  </Link>
-
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-1 min-h-[2.5rem]">
-                    {product.description || 'No description available.'}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    <div>
-                      <span className="text-2xl font-bold text-gray-800">
-                        ${typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
+              return (
+                <div
+                  key={product._id || product.id}
+                  className="bg-white border-2 border-green-200 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group"
+                >
+                  {/* Image Container */}
+                  <div className="relative h-56 overflow-hidden bg-gray-50">
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="bg-green-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-md">
+                        {product.category || 'Uncategorized'}
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      disabled={stockQty === 0}
-                      className={`group px-5 py-2.5 rounded-full font-semibold flex items-center gap-2 border border-yellow-400 transition-all duration-300 shadow-sm ${
-                        stockQty === 0
-                          ? 'bg-gray-300 text-gray-600 border-gray-300 cursor-not-allowed'
-                          : 'bg-white text-green-600 hover:bg-yellow-400 hover:text-white'
-                      }`}
-                    >
-                      <FiShoppingCart
-                        className={`w-4 h-4 transition-all duration-300 ${
-                          stockQty === 0 ? '' : 'text-green-600 group-hover:text-white'
-                        }`}
+                    <Link href={`/products/${product.slug || product._id}`}>
+                      <Image
+                        src={product.images?.[0] || '/images/placeholder.jpg'}
+                        alt={product.name || 'Product'}
+                        fill
+                        className="object-cover cursor-pointer group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = '/images/placeholder.jpg';
+                        }}
                       />
-                      {stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
-                    </button>
+                    </Link>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 flex-1 flex flex-col">
+                    <Link href={`/products/${product.slug || product._id}`}>
+                      <h3 className="text-xl font-bold text-gray-800 mb-2 hover:text-green-600 transition-colors cursor-pointer line-clamp-1">
+                        {product.name || 'Unnamed Product'}
+                      </h3>
+                    </Link>
+
+                    <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-1 min-h-[2.5rem]">
+                      {product.description || 'No description available.'}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                      <div>
+                        <span className="text-2xl font-bold text-gray-800">
+                          ${typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={stockQty === 0}
+                        className={`group/btn px-5 py-2.5 rounded-full font-semibold flex items-center gap-2 border border-yellow-400 transition-all duration-300 shadow-sm ${
+                          stockQty === 0
+                            ? 'bg-gray-300 text-gray-600 border-gray-300 cursor-not-allowed'
+                            : 'bg-white text-green-600 hover:bg-yellow-400 hover:text-white'
+                        }`}
+                      >
+                        <FiShoppingCart
+                          className={`w-4 h-4 transition-all duration-300 ${
+                            stockQty === 0 ? '' : 'text-green-600 group-hover/btn:text-white'
+                          }`}
+                        />
+                        {stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
