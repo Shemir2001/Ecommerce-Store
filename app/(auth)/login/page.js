@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { message } from 'antd';
+// import { message } from 'antd';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
