@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { message } from 'antd';
+// import { message } from 'antd';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -34,14 +34,14 @@ export default function LoginPage() {
         
         if (!response.ok) {
           setError(data.message);
-          message.error(data.message);
+          // message.error(data.message);
         } else {
           setVerificationStep(true);
-          message.success('Verification code sent to your email');
+          // message.success('Verification code sent to your email');
         }
       } catch (error) {
         setError('An error occurred. Please try again.');
-        message.error('An error occurred. Please try again.');
+        // message.error('An error occurred. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -59,7 +59,7 @@ export default function LoginPage() {
         
         if (!response.ok) {
           setError(data.message);
-          message.error(data.message);
+          // message.error(data.message);
         } else {
           // If code is verified, proceed with login
           try {
@@ -85,20 +85,20 @@ export default function LoginPage() {
 
             if (result.error) {
               setError(result.error);
-              message.error(result.error);
+              // message.error(result.error);
             } else {
-              message.success('Login successful!');
+              // message.success('Login successful!');
               router.push('/');
               router.refresh();
             }
           } catch (error) {
             setError(error.message || 'Authentication failed');
-            message.error(error.message || 'Authentication failed');
+            // message.error(error.message || 'Authentication failed');
           }
         }
       } catch (error) {
         setError('An error occurred. Please try again.');
-        message.error('An error occurred. Please try again.');
+        // message.error('An error occurred. Please try again.');
       } finally {
         setLoading(false);
       }
