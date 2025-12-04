@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FiTwitter, FiFacebook, FiYoutube, FiLinkedin } from 'react-icons/fi';
+import Image from 'next/image';
+import { FiTwitter, FiFacebook, FiYoutube, FiLinkedin, FiX } from 'react-icons/fi';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -20,8 +21,14 @@ export default function Footer() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Logo and Tagline */}
-            <div>
-              <h2 className="text-green-500 text-4xl font-bold mb-2">Mobile Acessories</h2>
+            <div className="flex flex-col items-start">
+              <Image
+                src="/logoreal1.png" // Replace with your logo path
+                alt="Mobile Accessories Logo"
+                width={180} // adjust as needed
+                height={60} // adjust as needed
+                className="mb-2"
+              />
               <p className="text-orange-400 text-lg">Affordable Prices</p>
             </div>
 
@@ -91,7 +98,7 @@ export default function Footer() {
           <div>
             <h3 className="text-white text-xl font-bold mb-6">Why People Like us!</h3>
             <p className="text-gray-300 leading-relaxed mb-6">
-              typesetting, remaining essentially unchanged. It was popularised in the 1960s with the like Aldus PageMaker including of Lorem Ipsum.
+              We provide high-quality mobile accessories at affordable prices. Our products are tested for durability and style, making them the first choice for smartphone users.
             </p>
             <Link href="/about">
               <button className="border-2 border-orange-400 text-white px-8 py-2.5 rounded-full hover:bg-orange-400 transition-colors font-medium">
@@ -204,21 +211,11 @@ export default function Footer() {
       {/* Bottom Copyright Section */}
       <div className="border-t border-gray-600">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm text-gray-400">
             <p>
-              © <Link href="/" className="text-green-500 hover:text-green-400">Your Site Name</Link>, All right reserved.
+              © <Link href="/" className="text-green-500 hover:text-green-400">Mobile Phone Store</Link>, All rights reserved.
             </p>
-            <p>
-              Designed By{' '}
-              <a
-                href="https://htmlcodex.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-500 hover:text-green-400"
-              >
-                HTML Codex
-              </a>
-            </p>
+           
           </div>
         </div>
       </div>

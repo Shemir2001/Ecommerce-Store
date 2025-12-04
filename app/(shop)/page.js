@@ -362,26 +362,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Typed from 'typed.js';
 
 const heroSlides = [
-  {
+   {
     id: 1,
     image: '/coverpic.jpg',
-    title: 'Elevate Interiors',
-    subtitle: 'with Quality & Style',
-    description: 'Since 2015, Golden Rugs has been a trusted wholesale supplier of premium rugs and curated furniture, including dining sets, coffee tables, mirrors, and more. We deliver quality, affordability, and timeless design for retailers.',
+    title: 'Experience Cutting-Edge Mobile Technology',
+    subtitle: 'Smartphones & Accessories for Every Lifestyle',
+    description: 'Explore the latest smartphones, premium cases, chargers, and accessories designed to keep you connected and stylish. Quality products, unbeatable prices, and fast delivery for tech enthusiasts and everyday users alike.',
   },
   {
     id: 2,
     image: '/coverpic2.jpg',
-    title: 'Transform Your Home',
-    subtitle: 'with Modern Elegance',
-    description: 'Discover handcrafted furniture and décor that define comfort and luxury. Shop dining sets, coffee tables, and more for your perfect space.',
+    title: 'Upgrade Your Mobile Experience',
+    subtitle: 'Top Accessories & Must-Have Gadgets',
+    description: 'From sleek phone cases to high-speed chargers and wireless earbuds, find everything to enhance your mobile experience. Shop smart, stay trendy, and enjoy devices that work seamlessly with your lifestyle.',
   },
   {
     id: 3,
     image: '/coverpic3.jpg',
-    title: 'Crafted to Inspire',
-    subtitle: 'Every Space',
-    description: 'Explore our wide range of designs, from bold modern styles to timeless classics — made for retailers who value excellence.',
+    title: 'Innovative Devices for Modern Living',
+    subtitle: 'Smartphones, Chargers, & Accessories',
+    description: 'Discover a curated collection of mobile phones and accessories built for performance, style, and convenience. Perfect for tech-savvy users looking for reliable products that elevate everyday mobile use.',
   },
 ];
 
