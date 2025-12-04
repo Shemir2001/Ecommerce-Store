@@ -874,7 +874,7 @@ function ProductsContent() {
               <div className="relative z-10">
                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-3xl blur-3xl"></div>
                 <img 
-                  src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80" 
+                  src='/coverpic3.jpg'
                   alt="Premium Smartphones"
                   className="relative rounded-3xl shadow-2xl w-full h-[500px] object-cover border-4 border-white/20"
                 />
