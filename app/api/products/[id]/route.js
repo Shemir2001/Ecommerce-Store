@@ -5,7 +5,7 @@ import Product from '@/models/Product';
 // PUT (update) a product
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+      const { id } = await params; // ✅ FIX
     const productData = await request.json();
     
     await connectToDatabase();
@@ -30,7 +30,7 @@ export async function PUT(request, { params }) {
 // GET a single product
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+     const { id } = await params; // ✅ FIX
     
     await connectToDatabase();
     const product = await Product.findById(id);
@@ -49,7 +49,7 @@ export async function GET(request, { params }) {
 // DELETE a product
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+     const { id } = await params; // ✅ FIX
     
     await connectToDatabase();
     const result = await Product.findByIdAndDelete(id);

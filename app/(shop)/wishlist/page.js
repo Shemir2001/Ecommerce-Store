@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FiShoppingCart, FiTrash2, FiArrowLeft } from 'react-icons/fi';
 import { useWishlistStore, useCartStore } from '@/lib/store';
-
+import Image from 'next/image';
 export default function WishlistPage() {
   const { items, removeItem } = useWishlistStore();
   const { addItem: addToCart } = useCartStore();
@@ -80,19 +80,24 @@ const handleRemoveFromWishlist = async (productId) => {
               exit={{ opacity: 0, y: -20 }}
               className="bg-white rounded-lg shadow-md overflow-hidden"
             >
-              <div className="aspect-w-3 aspect-h-2 bg-gray-200">
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No Image
-                  </div>
-                )}
-              </div>
+             <div className="relative w-full h-48 bg-gray-200 overflow-hidden">
+  {item.images && item.images.length > 0 ? (
+    <Image
+      src={item.images[0]}
+      alt={item.name}
+      fill
+      sizes="(max-width: 768px) 100vw,
+             (max-width: 1200px) 50vw,
+             33vw"
+      className="object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-gray-400">
+      No Image
+    </div>
+  )}
+</div>
+
               <div className="p-4">
                 <h3 className="text-lg font-medium mb-2">{item.name}</h3>
                 <p className="text-blue-600 font-bold mb-4">${item.price.toFixed(2)}</p>

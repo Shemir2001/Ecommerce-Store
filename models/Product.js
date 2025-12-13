@@ -7,43 +7,57 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     slug: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
     },
+
     description: {
       type: String,
       required: true,
     },
+
     price: {
       type: Number,
       required: true,
     },
+
+    currency: {
+      type: String,
+      default: "PKR",
+    },
+
     images: [
       {
         type: String,
       },
     ],
+
     category: {
       type: String,
       required: true,
     },
-    featured: {           // ADD THIS FIELD
+
+    featured: {
       type: Boolean,
       default: false,
     },
-   
-    quantity: {
-      type: Number,
-      default: 0,
+
+    // ✅ NEW FIELD (replaces quantity)
+    stockStatus: {
+      type: String,
+      enum: ["in-stock", "out-of-stock"],
+      default: "in-stock",
     },
+
     ratings: [
       {
         user: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
+          ref: "User",
         },
         rating: {
           type: Number,
@@ -57,6 +71,7 @@ const ProductSchema = new mongoose.Schema(
         },
       },
     ],
+
     averageRating: {
       type: Number,
       default: 0,
@@ -65,4 +80,4 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
+export default mongoose.models.Product || mongoose.model("Product", ProductSchema);

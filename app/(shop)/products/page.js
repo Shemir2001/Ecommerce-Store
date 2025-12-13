@@ -650,17 +650,46 @@ function ProductsContent() {
     onAuthed();
   };
 
-  const handleAddToCart = async (product) => {
-    requireAuth(() => {
-      const normalizedProduct = {
-        ...product,
-        id: product._id || product.id,
-        quantity: 1
-      };
-      addToCart(normalizedProduct);
-      message.success(`${product.name} added to cart!`);
+ const handleAddToCart = async (product) => {
+  requireAuth(async () => {
+    const productId = product._id || product.id;
+
+    // 1️⃣ Optimistic UI update (Zustand)
+    addToCart({
+      ...product,
+      id: productId,
+      quantity: 1,
     });
-  };
+
+    try {
+      // 2️⃣ Persist cart to database
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          productId,
+          quantity: 1,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to add to cart");
+      }
+
+      message.success(`${product.name} added to cart`);
+    } catch (error) {
+      console.error("❌ Cart API error:", error);
+      message.error("Failed to save cart");
+
+      // 3️⃣ Rollback UI if API fails (important)
+      removeFromCart(productId);
+    }
+  });
+};
+
 
   const handleToggleWishlist = (product) => {
     requireAuth(() => {
@@ -982,9 +1011,9 @@ function ProductsContent() {
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 rounded-xl">
-                    <span className="text-sm font-bold text-gray-700">${priceRange[0]}</span>
+                    <span className="text-sm font-bold text-gray-700">PKR{priceRange[0]}</span>
                     <div className="w-px h-6 bg-green-300"></div>
-                    <span className="text-sm font-bold text-gray-700">${priceRange[1]}</span>
+                    <span className="text-sm font-bold text-gray-700">PKR{priceRange[1]}</span>
                   </div>
                   <div className="relative pt-2">
                     <input
@@ -1094,7 +1123,7 @@ function ProductsContent() {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
                 {filteredProducts.map((product) => {
-                  const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
+                    const inStock = product.stockStatus === "in-stock";
                   const isInWishlist = safeWishlistItems.some(
                     (item) => (item._id || item.id) === (product._id || product.id)
                   );
@@ -1122,14 +1151,12 @@ function ProductsContent() {
                         {/* Stock Badge */}
                         <div className="absolute top-4 left-4">
                           <span className={`px-4 py-2 rounded-full text-xs font-bold backdrop-blur-sm ${
-                            stockQty > 5
-                              ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/50'
-                              : stockQty > 0
-                              ? 'bg-yellow-400/90 text-gray-800 shadow-lg shadow-yellow-400/50'
-                              : 'bg-red-500/90 text-white shadow-lg shadow-red-500/50'
-                          }`}>
-                            {stockQty > 5 ? '✓ In Stock' : stockQty > 0 ? '⚠ Low Stock' : '✗ Out of Stock'}
-                          </span>
+  inStock
+    ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/50'
+    : 'bg-red-500/90 text-white shadow-lg shadow-red-500/50'
+}`}>
+  {inStock ? '✓ In Stock' : '✗ Out of Stock'}
+</span>
                         </div>
 
                         <button
@@ -1174,13 +1201,13 @@ function ProductsContent() {
                         <div className="flex items-center justify-between pt-5 border-t-2 border-gray-100">
                           <div>
                             <p className="text-xs text-gray-500 mb-1 font-semibold">Price</p>
-                            <p className="text-2xl font-black text-gray-800">
-                              ${Number(product.price).toFixed(2)}
+                            <p className="text-2xl font-black text-gray-800">PKR
+                              {Number(product.price).toFixed(2)}
                             </p>
                           </div>
                           <button
                             onClick={() => handleAddToCart(product)}
-                            disabled={stockQty === 0}
+                            disabled={!inStock}
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white p-3.5 rounded-2xl transition-all shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none hover:scale-105">
                             <FiShoppingCart className="w-5 h-5" />
                           </button>
@@ -1196,7 +1223,7 @@ function ProductsContent() {
             {!isLoading && viewMode === 'list' && (
               <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-7">
                 {filteredProducts.map((product) => {
-                  const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
+                  const inStock = product.stockStatus === "in-stock";
                   const isInWishlist = safeWishlistItems.some(
                     (item) => (item._id || item.id) === (product._id || product.id)
                   );
@@ -1223,15 +1250,15 @@ function ProductsContent() {
 
                         {/* Stock Badge */}
                         <div className="absolute top-4 left-4">
-                          <span className={`px-4 py-2 rounded-full text-xs font-bold backdrop-blur-sm ${
-                            stockQty > 5
-                              ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/50'
-                              : stockQty > 0
-                              ? 'bg-yellow-400/90 text-gray-800 shadow-lg shadow-yellow-400/50'
-                              : 'bg-red-500/90 text-white shadow-lg shadow-red-500/50'
-                          }`}>
-                            {stockQty > 5 ? '✓ In Stock' : stockQty > 0 ? '⚠ Low Stock' : '✗ Out of Stock'}
-                          </span>
+                          <span
+  className={`px-4 py-2 rounded-full text-xs font-bold backdrop-blur-sm ${
+    product.stockStatus === 'in-stock'
+      ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/50'
+      : 'bg-red-500/90 text-white shadow-lg shadow-red-500/50'
+  }`}
+>
+  {product.stockStatus === 'in-stock' ? '✓ In Stock' : '✗ Out of Stock'}
+</span>
                         </div>
 
                         <button
@@ -1258,8 +1285,8 @@ function ProductsContent() {
                           </div>
                           <div className="ml-6 text-right">
                             <p className="text-xs text-gray-500 mb-1 font-semibold">Price</p>
-                            <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                              ${Number(product.price).toFixed(2)}
+                            <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">PKR
+                              {Number(product.price).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -1285,13 +1312,15 @@ function ProductsContent() {
                         </div>
 
                         <div className="flex gap-4 mt-auto">
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            disabled={stockQty === 0}
-                            className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none hover:scale-[1.02]">
-                            <FiShoppingCart className="w-5 h-5" />
-                            {stockQty === 0 ? 'Out of Stock' : 'Add to Cart'}
-                          </button>
+                         <button
+  onClick={() => handleAddToCart(product)}
+  disabled={product.stockStatus !== 'in-stock'}
+  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:shadow-none hover:scale-[1.02]"
+>
+  <FiShoppingCart className="w-5 h-5" />
+  {product.stockStatus !== 'in-stock' ? 'Out of Stock' : 'Add to Cart'}
+</button>
+
                           <Link
                             href={`/products/${product.slug}`}
                             className="px-8 py-4 border-2 border-gray-300 rounded-2xl hover:border-green-500 hover:bg-green-50 transition-all font-bold text-gray-700 hover:text-green-600 flex items-center justify-center hover:scale-[1.02]">

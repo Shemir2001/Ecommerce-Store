@@ -17,7 +17,14 @@ export default function FreshVegetablesSection() {
   const [recentProducts, setRecentProducts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef(null);
-
+const requireAuth = (onAuthed) => {
+    if (!isAuthed) {
+      message.info('Please sign in to continue');
+      router.push('/login');
+      return;
+    }
+    onAuthed();
+  };
   // Fetch recently added products (last 2 days)
   useEffect(() => {
     const fetchRecentProducts = async () => {
@@ -52,23 +59,45 @@ export default function FreshVegetablesSection() {
     fetchRecentProducts();
   }, []);
 
-  const handleAddToCart = (product) => {
-    if (!isAuthed) {
-      message.info('Please sign in to continue');
-      router.push('/login');
-      return;
-    }
+  const handleAddToCart = async (product) => {
+  requireAuth(async () => {
+    const productId = product._id || product.id;
 
-    const normalizedProduct = {
+    // 1️⃣ Optimistic UI update (Zustand)
+    addToCart({
       ...product,
-      id: product._id || product.id,
+      id: productId,
       quantity: 1,
-    };
+    });
 
-    addToCart(normalizedProduct);
-    message.success(`${product.name} added to cart!`);
-  };
+    try {
+      // 2️⃣ Persist cart to database
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          productId,
+          quantity: 1,
+        }),
+      });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to add to cart");
+      }
+
+      message.success(`${product.name} added to cart`);
+    } catch (error) {
+      console.error("❌ Cart API error:", error);
+      message.error("Failed to save cart");
+
+      // 3️⃣ Rollback UI if API fails (important)
+      removeFromCart(productId);
+    }
+  });
+};
   const handlePrev = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -134,7 +163,7 @@ export default function FreshVegetablesSection() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {recentProducts.map((product) => {
-            const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
+            const isOutOfStock = product.stockStatus === 'out-of-stock';
 
             return (
               <div
@@ -179,13 +208,13 @@ export default function FreshVegetablesSection() {
                       </div>
 
                       <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={stockQty === 0}
-                        className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium px-5 py-2.5 rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        <FiShoppingCart className="w-4 h-4" />
-                        {stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
-                      </button>
+              onClick={() => handleAddToCart(product)}
+              disabled={isOutOfStock}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium px-5 py-2.5 rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              <FiShoppingCart className="w-4 h-4" />
+              {isOutOfStock ? 'Out of Stock' : 'Add to cart'}
+            </button>
                     </div>
                   </div>
                 </div>

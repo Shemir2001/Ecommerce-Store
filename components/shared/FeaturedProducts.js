@@ -1104,7 +1104,14 @@ export default function FeaturedProducts() {
 
   const { products, isLoading } = useProductStore();
   const { addItem: addToCart } = useCartStore();
-
+const requireAuth = (onAuthed) => {
+    if (!isAuthed) {
+      message.info('Please sign in to continue');
+      router.push('/login');
+      return;
+    }
+    onAuthed();
+  };
   // Fetch categories dynamically from API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -1138,29 +1145,47 @@ export default function FeaturedProducts() {
     setFeaturedProducts(featured);
   }, [products]);
 
-  const handleAddToCart = (product) => {
-    if (!isAuthed) {
-      message.info('Please sign in to continue');
-      router.push('/login');
-      return;
-    }
+ const handleAddToCart = async (product) => {
+  requireAuth(async () => {
+    const productId = product._id || product.id;
 
-    const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
-    
-    if (stockQty === 0) {
-      message.error('Product is out of stock');
-      return;
-    }
-
-    const normalizedProduct = {
+    // 1️⃣ Optimistic UI update (Zustand)
+    addToCart({
       ...product,
-      id: product._id || product.id,
+      id: productId,
       quantity: 1,
-    };
+    });
 
-    addToCart(normalizedProduct);
-    message.success(`${product.name} added to cart!`);
-  };
+    try {
+      // 2️⃣ Persist cart to database
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          productId,
+          quantity: 1,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to add to cart");
+      }
+
+      message.success(`${product.name} added to cart`);
+    } catch (error) {
+      console.error("❌ Cart API error:", error);
+      message.error("Failed to save cart");
+
+      // 3️⃣ Rollback UI if API fails (important)
+      removeFromCart(productId);
+    }
+  });
+};
+
+
 
   // Filter products by selected category
   const filteredProducts =
@@ -1232,7 +1257,8 @@ export default function FeaturedProducts() {
         {!isLoading && filteredProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredProducts.slice(0, 8).map((product) => {
-              const stockQty = typeof product.quantity === 'number' ? product.quantity : 0;
+             const isOutOfStock = product.stockStatus === 'out-of-stock';
+
 
               return (
                 <div
@@ -1280,21 +1306,22 @@ export default function FeaturedProducts() {
                       </div>
 
                       <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={stockQty === 0}
-                        className={`group/btn px-5 py-2.5 rounded-full font-semibold flex items-center gap-2 border border-yellow-400 transition-all duration-300 shadow-sm ${
-                          stockQty === 0
-                            ? 'bg-gray-300 text-gray-600 border-gray-300 cursor-not-allowed'
-                            : 'bg-white text-green-600 hover:bg-yellow-400 hover:text-white'
-                        }`}
-                      >
-                        <FiShoppingCart
-                          className={`w-4 h-4 transition-all duration-300 ${
-                            stockQty === 0 ? '' : 'text-green-600 group-hover/btn:text-white'
-                          }`}
-                        />
-                        {stockQty === 0 ? 'Out of Stock' : 'Add to cart'}
-                      </button>
+  onClick={() => handleAddToCart(product)}
+  disabled={isOutOfStock}
+  className={`group/btn px-5 py-2.5 rounded-full font-semibold flex items-center gap-2 border border-yellow-400 transition-all duration-300 shadow-sm ${
+    isOutOfStock
+      ? 'bg-gray-300 text-gray-600 border-gray-300 cursor-not-allowed'
+      : 'bg-white text-green-600 hover:bg-yellow-400 hover:text-white'
+  }`}
+>
+  <FiShoppingCart
+    className={`w-4 h-4 transition-all duration-300 ${
+      isOutOfStock ? '' : 'text-green-600 group-hover/btn:text-white'
+    }`}
+  />
+  {isOutOfStock ? 'Out of Stock' : 'Add to cart'}
+</button>
+
                     </div>
                   </div>
                 </div>
